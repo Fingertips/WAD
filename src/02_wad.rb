@@ -79,10 +79,10 @@ class Wad
 
   def s3_write
     log "Trying to write Wad to S3"
-    if response = Presss.put(s3_path, open(bzip_filename))
-      p response
+    if Presss.put(s3_path, open(bzip_filename))
+      log "Wrote Wad to S3"
     else
-      log "No response"
+      log "Failed to write to S3, debug with `wad -h'"
     end
   end
 

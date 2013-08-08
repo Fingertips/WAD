@@ -64,6 +64,10 @@ When all of that is done, you should end up with something like this:
       - S3_BUCKET_NAME=unique-wad-bucket-name
       secure: "OTpNPEmXlMm70P4y6sE419Rr…"
 
+### Setting up S3
+
+WAD doesn't automatically create a bucket for you. It also only supports buckets in Ireland.
+
 ## Q & A
 
 #### Why isn't this a gem?
