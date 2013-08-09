@@ -35,16 +35,17 @@ You can probably make it work with a creative combination of `before_` and `afte
 
 ### Environment
 
-The WAD script needs to know where and how to access S3. You can do this with two environment variables. One holds the bucket name and the other holds the S3 credentials.
+The WAD script needs to know where and how to access S3. You can do this with three environment variables. The S3 region, the bucket name and the S3 credentials.
 
-The bucket name is relatively easy:
+The region and bucket name are relatively easy:
 
     env:
+      - S3_REGION=eu-west-1
       - S3_BUCKET_NAME=unique-wad-bucket-name
 
-But the credentials need to be signed.
+You don't have to configure the region if you're using `us-east-1`, the default.
 
-First concatenate your key and secret separated by a semicolon, like so:
+The hard part is configuring the credentials, because they need to be signed. First concatenate your key and secret separated by a semicolon, like so:
 
     XXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -55,7 +56,6 @@ Then you use the Travis-CI command line utility to sign it. Replace `account/rep
 If you're already using other encrypted variables you need to re-encrypt those as well. Please read Travis-CI documentation to figure out how that works. Good luck!
 
 When all of that is done, you should end up with something like this:
-
 
     install: "touch ~/do_not_run_bundle"
     before_script: "bin/wad"
@@ -76,10 +76,6 @@ There are two reasons:
 
 1. Installing gems is relatively slow and would unnecessarily slow down the build.
 2. We wanted WAD to be completely standalone and only require the Ruby stdlib.
-
-#### Why can't I configure an availability zone?
-
-Because we got lazy. We would love a pull request!
 
 #### Why is the sky blue?
 
