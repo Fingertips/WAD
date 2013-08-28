@@ -1,9 +1,10 @@
 #!/usr/bin/env ruby
 
-# Generated on: 09-08-2013 at 16:26
+# Generated on: 28-08-2013 at 16:50
 
 require 'time'
 require 'net/http'
+require 'net/https'
 require 'digest/md5'
 require 'fileutils'
 require 'openssl'
@@ -291,9 +292,9 @@ class Wad
 
   def s3_configure
     Presss.config = {
-      bucket_name: s3_bucket_name,
-      access_key_id: s3_access_key_id,
-      secret_access_key: s3_secret_access_key
+      :bucket_name => s3_bucket_name,
+      :access_key_id => s3_access_key_id,
+      :secret_access_key => s3_secret_access_key
     }
   end
 
