@@ -67,9 +67,9 @@ class Wad
 
   def s3_configure
     Presss.config = {
-      bucket_name: s3_bucket_name,
-      access_key_id: s3_access_key_id,
-      secret_access_key: s3_secret_access_key
+      :bucket_name => s3_bucket_name,
+      :access_key_id => s3_access_key_id,
+      :secret_access_key => s3_secret_access_key
     }
   end
 
