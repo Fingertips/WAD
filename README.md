@@ -8,9 +8,13 @@ WAD is a little script that replaces the usual `bundle install` on Travis-CI. It
 
 Download the script and put it in your project. It doesn't really matter where you store it. We assume you're using `bin/` in the following examples.
 
+    $ curl -o bin/wad https://raw.github.com/Fingertips/WAD/master/bin/wad
+
 Now make the script executable.
 
     $ chmod +x bin/wad
+
+Add and commit it to your source repository.
 
 ### Build configuration
 
@@ -27,8 +31,8 @@ Before this happens we need to keep Travis-CI from installing the bundle and do 
 If you already have other test setup tasks, make sure the bundle is installed before you try to use it. For example:
 
     install:
-        - "touch ~/do_not_run_bundle"
-        - "bin/wad"
+      - "touch ~/do_not_run_bundle"
+      - "bin/wad"
     script: "bundle exec rake test:all"
 
 You can probably make it work with a creative combination of `before_` and `after_` scripts.
@@ -53,7 +57,7 @@ Then you use the Travis-CI command line utility to sign it. Replace `account/rep
 
      $ travis encrypt S3_CREDENTIALS="XXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" --repo account/reponame
 
-If you're already using other encrypted variables you need to re-encrypt those as well. Please read Travis-CI documentation to figure out how that works. Good luck!
+If you're already using other encrypted variables you can add another `secure` key to the configuration or re-encrypt all of the settings. Please read Travis-CI documentation to figure out how that works. Good luck!
 
 When all of that is done, you should end up with something like this:
 
@@ -62,11 +66,16 @@ When all of that is done, you should end up with something like this:
     script: "bundle exec rake test:all"
     env:
       - S3_BUCKET_NAME=unique-wad-bucket-name
+      - S3_REGION=eu-west-1
       secure: "OTpNPEmXlMm70P4y6sE419Rr…"
 
 ### Setting up S3
 
-WAD doesn't automatically create a bucket for you. It also only supports buckets in Ireland.
+WAD doesn't automatically create a bucket for you. Please create one with the AWS console or the S3 tool of your choice.
+
+### Cleaning up
+
+Note that WAD **doesn't clean up** old bundles for you. If you change Gemfile.lock a lot and the bucket becomes very large, you probably want to clean out old bundles once in a while.
 
 ## Q & A
 
