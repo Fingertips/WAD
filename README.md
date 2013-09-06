@@ -58,7 +58,7 @@ When all of that is done, you should end up with something like this:
       global:
         - S3_BUCKET_NAME=unique-wad-bucket-name
         - S3_REGION=eu-west-1
-        secure: "OTpNPEmXlMm70P4y6sE419Rr…"
+        - secure: "OTpNPEmXlMm70P4y6sE419Rr…"
 
 If you're already using other encrypted variables you can add another `secure` key to the configuration or re-encrypt all of the settings. Please read Travis-CI documentation to figure out how that works. Good luck!
 
