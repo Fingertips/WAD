@@ -79,6 +79,11 @@ WAD doesn't automatically create a bucket for you. Please create one with the AW
 
 Note that WAD **doesn't clean up** old bundles for you. If you change Gemfile.lock a lot and the bucket becomes very large, you probably want to clean out old bundles once in a while.
 
+
+### Example
+
+WAD uses itself to run itself on Travis, you can check out our [Travis configuration](https://github.com/Fingertips/WAD/blob/master/.travis.yml) and the [CI output](https://travis-ci.org/Fingertips/WAD).
+
 ## Q & A
 
 #### Why isn't this a gem?
