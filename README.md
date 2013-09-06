@@ -29,6 +29,15 @@ Before this happens we need to keep Travis-CI from installing the bundle and do 
 
 Please refer to the Travis documentation if you need to do something more elaborate.
 
+### Alternative build configuration
+
+If you always want to run the latest version of WAD, you can set it up like this:
+
+    install: "curl https://raw.github.com/Fingertips/WAD/master/bin/wad | ruby"
+    script: "bundle exec rake test:all"
+
+Note that this opens up an attack vector! For example, if someone manages to poision the DNS server used by Travis they can run arbitrary code.
+
 ### Environment
 
 The WAD script needs to know where and how to access S3. You can do this with three environment variables. The S3 region, the bucket name and the S3 credentials.
