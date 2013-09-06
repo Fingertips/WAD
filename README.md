@@ -24,18 +24,10 @@ Travis-CI offers a number of configuration options for stuff that can ran around
  
 Before this happens we need to keep Travis-CI from installing the bundle and do it ourselves.
  
-    install: "touch ~/do_not_run_bundle"
-    before_script: "bin/wad"
+    install: "bin/wad"
     script: "bundle exec rake test:all"
 
-If you already have other test setup tasks, make sure the bundle is installed before you try to use it. For example:
-
-    install:
-      - "touch ~/do_not_run_bundle"
-      - "bin/wad"
-    script: "bundle exec rake test:all"
-
-You can probably make it work with a creative combination of `before_` and `after_` scripts.
+Please refer to the Travis documentation if you need to do something more elaborate.
 
 ### Environment
 
@@ -44,8 +36,9 @@ The WAD script needs to know where and how to access S3. You can do this with th
 The region and bucket name are relatively easy:
 
     env:
-      - S3_REGION=eu-west-1
-      - S3_BUCKET_NAME=unique-wad-bucket-name
+      global:
+        - S3_REGION=eu-west-1
+        - S3_BUCKET_NAME=unique-wad-bucket-name
 
 You don't have to configure the region if you're using `us-east-1`, the default.
 
@@ -57,17 +50,17 @@ Then you use the Travis-CI command line utility to sign it. Replace `account/rep
 
      $ travis encrypt S3_CREDENTIALS="XXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" --repo account/reponame
 
-If you're already using other encrypted variables you can add another `secure` key to the configuration or re-encrypt all of the settings. Please read Travis-CI documentation to figure out how that works. Good luck!
-
 When all of that is done, you should end up with something like this:
 
-    install: "touch ~/do_not_run_bundle"
-    before_script: "bin/wad"
+    install: "bin/wad"
     script: "bundle exec rake test:all"
     env:
-      - S3_BUCKET_NAME=unique-wad-bucket-name
-      - S3_REGION=eu-west-1
-      secure: "OTpNPEmXlMm70P4y6sE419Rr…"
+      global:
+        - S3_BUCKET_NAME=unique-wad-bucket-name
+        - S3_REGION=eu-west-1
+        secure: "OTpNPEmXlMm70P4y6sE419Rr…"
+
+If you're already using other encrypted variables you can add another `secure` key to the configuration or re-encrypt all of the settings. Please read Travis-CI documentation to figure out how that works. Good luck!
 
 ### Setting up S3
 
