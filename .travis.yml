@@ -1,0 +1,8 @@
+language: ruby
+install: "curl https://raw.github.com/Fingertips/WAD/master/bin/wad | ruby"
+script: "ruby -r bundler -e 'Bundler.setup'"
+env:
+  global:
+    - S3_BUCKET_NAME=fingertips-wad-test-2
+    - s3_REGION=eu-west-1
+    - secure: "er80bqgzxPrbPSfQufclakYj9uzOCbIuTgwplaHIJuceFhRETRg5fs6RGsUe8oNrrxCXr1TSckiVAL41qxyvu3UJM3uyNwC3iY6Wzmy/88C2Xk1kcEl1CcaHrJlGKgx3tG5ErKzdZTQ9oOtnEhAjrsYNthZ45FaweRyzR0rxCQc="
