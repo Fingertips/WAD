@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 12-09-2013 at 14:25
+# Generated on: 12-09-2013 at 14:40
 
 require 'time'
 require 'net/http'
@@ -296,6 +296,6 @@ if ARGV.index('-v')
   Presss.logger = Logger.new($stdout)
 end
 
-Wad.setup
+Wad.new.setup
 __END__
 

@@ -3,4 +3,4 @@ if ARGV.index('-v')
   Presss.logger = Logger.new($stdout)
 end
 
-Wad.setup
+Wad.new.setup
