@@ -86,7 +86,7 @@ class Presss
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, path)
       Presss.log "path=#{path} signed_url=#{url}"
-      system 'curl', '-o', destination, url
+      system 'curl', '-f', '-o', destination, url
       $?.success?
     end
 
@@ -94,7 +94,7 @@ class Presss
     # the content-type if you want to set a specific one.
     def put(path, file)
       url = signed_url(:put, Time.now.to_i + 600, path)
-      system 'curl', '-T', file, url
+      system 'curl', '-f', '-T', file, url
       $?.success?
     end
   end

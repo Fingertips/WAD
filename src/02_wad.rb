@@ -141,8 +141,4 @@ class Wad
   def log(message)
     puts "[wad] #{message}"
   end
-
-  def self.setup
-    new.setup
-  end
 end
