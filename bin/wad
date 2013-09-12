@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 12-09-2013 at 01:24
+# Generated on: 12-09-2013 at 14:25
 
 require 'time'
 require 'net/http'
@@ -98,7 +98,7 @@ class Presss
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, path)
       Presss.log "path=#{path} signed_url=#{url}"
-      system 'curl', '-o', destination, url
+      system 'curl', '-f', '-o', destination, url
       $?.success?
     end
 
@@ -106,7 +106,7 @@ class Presss
     # the content-type if you want to set a specific one.
     def put(path, file)
       url = signed_url(:put, Time.now.to_i + 600, path)
-      system 'curl', '-T', file, url
+      system 'curl', '-f', '-T', file, url
       $?.success?
     end
   end
@@ -288,10 +288,6 @@ class Wad
 
   def log(message)
     puts "[wad] #{message}"
-  end
-
-  def self.setup
-    new.setup
   end
 end
 
