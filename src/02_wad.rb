@@ -79,7 +79,7 @@ class Wad
 
   def s3_write
     log "Trying to write Wad to S3"
-    if Presss.put(s3_path, open(bzip_filename))
+    if Presss.put(s3_path, bzip_filename)
       log "Wrote Wad to S3"
     else
       log "Failed to write to S3, debug with `wad -h'"
@@ -94,14 +94,7 @@ class Wad
 
     log "Trying to fetch Wad from S3"
     FileUtils.mkdir_p(File.dirname(bzip_filename))
-    if bzip = Presss.get(s3_path)
-      File.open(bzip_filename, 'wb') do |file|
-        file.write(bzip)
-      end
-      true
-    else
-      false
-    end
+    Presss.download(s3_path, bzip_filename)
   end
 
   def zip
@@ -131,7 +124,8 @@ class Wad
 
   def install_bundle
     log "Installing bundle"
-    system("bundle install --path .bundle --without='development production'")
+    bundle_without = ENV['WAD_BUNDLE_WITHOUT'] || "development production"
+    system("bundle install --path .bundle --without='#{bundle_without}'")
   end
 
   def setup
