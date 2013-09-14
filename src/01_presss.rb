@@ -85,7 +85,7 @@ class Presss
 
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, path)
-      Presss.log "path=#{path} signed_url=#{url}"
+      Presss.log "signed_url=#{url}"
       system 'curl', '-f', '-o', destination, url
       $?.success?
     end

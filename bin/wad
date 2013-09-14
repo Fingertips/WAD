@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 
-# Generated on: 12-09-2013 at 14:40
+# Generated on: 13-09-2013 at 23:15
 
 require 'time'
 require 'net/http'
 require 'net/https'
 require 'digest/md5'
+require 'digest/sha1'
 require 'fileutils'
 require 'openssl'
 require 'base64'
@@ -97,7 +98,7 @@ class Presss
 
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, path)
-      Presss.log "path=#{path} signed_url=#{url}"
+      Presss.log "signed_url=#{url}"
       system 'curl', '-f', '-o', destination, url
       $?.success?
     end
@@ -149,8 +150,42 @@ end
 # Utility class to push and fetch Bundler directories to speed up
 # test runs on Travis-CI
 class Wad
+  class Key
+    def default_environment_variables
+      []
+    end
+
+    def default_files
+      [ ENV['BUNDLE_GEMFILE'] ]
+    end
+
+    def environment_variables
+      if ENV['WAD_ENVIRONMENT_VARIABLES']
+        ENV['WAD_ENVIRONMENT_VARIABLES'].split(',')
+      else
+        default_environment_variables
+      end
+    end
+
+    def files
+      ENV['WAD_FILES'] ? ENV['WAD_FILES'].split(',') : default_files
+    end
+
+    def environment_variable_contents
+      environment_variables.map { |v| ENV[v] }
+    end
+
+    def file_contents
+      files.map { |f| File.read(f) rescue nil }
+    end
+
+    def contents
+      segments = [ RUBY_VERSION, RUBY_PLATFORM ] + environment_variable_contents + file_contents
+      Digest::SHA1.hexdigest(segments.join("\n"))
+    end
+  end
+
   def initialize
-    write_cacert
     s3_configure
   end
 
@@ -158,39 +193,12 @@ class Wad
     Dir.pwd
   end
 
-  def cacert_filename
-    File.join(project_root, 'tmp/cacert.pem')
-  end
-
-  def write_cacert
-    FileUtils.mkdir_p(File.dirname(cacert_filename))
-    File.open(cacert_filename, 'wb') do |file|
-      file.write(DATA.read)
-    end
-  end
-
-  def gemfile_lock
-    File.join(project_root, 'Gemfile.lock')
-  end
-
-  def bundle_name_parts
-    [
-      File.read(gemfile_lock),
-      RUBY_VERSION,
-      RUBY_PLATFORM
-    ]
-  end
-
-  def bundle_name
-    Digest::MD5.hexdigest(bundle_name_parts.join)
+  def artifact_name
+    @artifact_name ||= Key.new.contents
   end
 
   def bzip_filename
-    File.join(project_root, "tmp/#{bundle_name}.tar.bz2")
-  end
-
-  def bundler_path
-    '.bundle'
+    File.join(project_root, "tmp/#{artifact_name}.tar.bz2")
   end
 
   def s3_bucket_name
@@ -210,7 +218,7 @@ class Wad
   end
 
   def s3_path
-    "#{bundle_name}.tar.bz2"
+    "#{artifact_name}.tar.bz2"
   end
 
   def s3_configure
@@ -221,16 +229,12 @@ class Wad
     }
   end
 
-  def s3_region
-    'eu-west-1'
-  end
-
   def s3_write
     log "Trying to write Wad to S3"
     if Presss.put(s3_path, bzip_filename)
       log "Wrote Wad to S3"
     else
-      log "Failed to write to S3, debug with `wad -h'"
+      log "Failed to write to S3, debug with `wad -v'"
     end
   end
 
@@ -248,12 +252,14 @@ class Wad
   def zip
     log "Creating Wad with tar (#{bzip_filename})"
     system("cd #{project_root} && tar -cjf #{bzip_filename} #{bundler_path}")
+    $?.success?
   end
 
 
   def unzip
     log "Unpacking Wad with tar (#{bzip_filename})"
     system("cd #{project_root} && tar -xjf #{bzip_filename}")
+    $?.success?
   end
 
   def put
@@ -264,25 +270,29 @@ class Wad
   def get
     if s3_read
       unzip
-      true
-    else
-      false
     end
   end
 
-  def install_bundle
-    log "Installing bundle"
+  def default_command
     bundle_without = ENV['WAD_BUNDLE_WITHOUT'] || "development production"
-    system("bundle install --path .bundle --without='#{bundle_without}'")
+    "bundle install --path .bundle --without='#{bundle_without}'"
+  end
+
+  def install
+    log "Installing..."
+    command = ENV['WAD_INSTALL_COMMAND'] || default_command
+    puts command
+    system(command)
+    $?.success?
   end
 
   def setup
     if get
-      install_bundle
-    elsif install_bundle
+      install
+    elsif install
       put
     else
-      raise "Failed properly fetch or install bundle. Please review the logs."
+      raise "Failed properly fetch or install. Please review the logs."
     end
   end
 
