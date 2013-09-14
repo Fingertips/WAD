@@ -147,7 +147,7 @@ class Wad
     elsif install
       put
     else
-      raise "Failed properly fetch or install. Please review the logs."
+      abort "Failed properly fetch or install. Please review the logs."
     end
   end
 
