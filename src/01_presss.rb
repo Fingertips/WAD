@@ -72,10 +72,6 @@ class Presss
       )
     end
 
-    def signature(verb, expires, path)
-
-    end
-
     def signed_url(verb, expires, path)
       path = canonicalized_resource(path)
       signature = [ verb.to_s.upcase, nil, nil, expires, path ].join("\n")
@@ -111,7 +107,7 @@ class Presss
     request = Presss::HTTP.new(config)
     log("Trying to GET #{path}")
     if request.download(path, destination)
-      log("Downloaded in #{(Time.now - t0).to_i} seconds")
+      puts("[wad] Downloaded in #{(Time.now - t0).to_i} seconds")
       true
     else
       nil
