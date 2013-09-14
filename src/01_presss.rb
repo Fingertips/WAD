@@ -72,15 +72,15 @@ class Presss
       )
     end
 
-    def signed_url(verb, expires, path)
+    def signed_url(verb, expires, headers, path)
       path = canonicalized_resource(path)
-      signature = [ verb.to_s.upcase, nil, nil, expires, path ].join("\n")
+      signature = [ verb.to_s.upcase, nil, nil, expires, [ headers, path ].flatten.compact ].flatten.join("\n")
       signed = authorization.sign(signature)
       "https://#{domain}#{path}?Signature=#{signed}&Expires=#{expires}&AWSAccessKeyId=#{authorization.access_key_id}"
     end
 
     def download(path, destination)
-      url = signed_url(:get, Time.now.to_i + 600, path)
+      url = signed_url(:get, Time.now.to_i + 600, nil, path)
       Presss.log "signed_url=#{url}"
       system 'curl', '-f', '-o', destination, url
       $?.success?
@@ -89,8 +89,10 @@ class Presss
     # Puts an object with a key using a file or string. Optionally pass in
     # the content-type if you want to set a specific one.
     def put(path, file)
-      url = signed_url(:put, Time.now.to_i + 600, path)
-      system 'curl', '-f', '-T', file, url
+      header = 'x-amz-storage-class:REDUCED_REDUNDANCY'
+      url = signed_url(:put, Time.now.to_i + 600, header, path)
+      Presss.log "signed_url=#{url}"
+      system 'curl', '-f', '-H', header, '-T', file, url
       $?.success?
     end
   end

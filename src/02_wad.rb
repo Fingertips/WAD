@@ -105,14 +105,14 @@ class Wad
   end
 
   def zip
-    log "Creating Wad with tar (#{bzip_filename})"
+    log "Creating artifact with tar (#{File.basename(bzip_filename)})"
     system("cd #{project_root} && tar -cjf #{bzip_filename} #{cache_path.join(' ')}")
     $?.success?
   end
 
 
   def unzip
-    log "Unpacking Wad with tar (#{bzip_filename})"
+    log "Unpacking artifact with tar (#{File.basename(bzip_filename)})"
     system("cd #{project_root} && tar -xjf #{bzip_filename}")
     $?.success?
   end
