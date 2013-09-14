@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 13-09-2013 at 23:40
+# Generated on: 13-09-2013 at 23:50
 
 require 'time'
 require 'net/http'
@@ -292,7 +292,7 @@ class Wad
     elsif install
       put
     else
-      raise "Failed properly fetch or install. Please review the logs."
+      abort "Failed properly fetch or install. Please review the logs."
     end
   end
 
