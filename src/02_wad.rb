@@ -7,7 +7,7 @@ class Wad
     end
 
     def default_files
-      [ ENV['BUNDLE_GEMFILE'] ]
+      [ "#{ENV['BUNDLE_GEMFILE']}.lock" ]
     end
 
     def environment_variables
