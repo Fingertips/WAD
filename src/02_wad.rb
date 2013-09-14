@@ -53,7 +53,7 @@ class Wad
   end
 
   def cache_path
-    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : '.bundle'
+    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : [ '.bundle' ]
   end
 
   def s3_bucket_name

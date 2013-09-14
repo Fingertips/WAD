@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 13-09-2013 at 23:50
+# Generated on: 13-09-2013 at 23:52
 
 require 'time'
 require 'net/http'
@@ -198,7 +198,7 @@ class Wad
   end
 
   def cache_path
-    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : '.bundle'
+    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : [ '.bundle' ]
   end
 
   def s3_bucket_name
