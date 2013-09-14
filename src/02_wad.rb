@@ -52,6 +52,10 @@ class Wad
     File.join(project_root, "tmp/#{artifact_name}.tar.bz2")
   end
 
+  def cache_path
+    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : '.bundle'
+  end
+
   def s3_bucket_name
     ENV['S3_BUCKET_NAME']
   end
@@ -102,7 +106,7 @@ class Wad
 
   def zip
     log "Creating Wad with tar (#{bzip_filename})"
-    system("cd #{project_root} && tar -cjf #{bzip_filename} #{bundler_path}")
+    system("cd #{project_root} && tar -cjf #{bzip_filename} #{cache_path.join(' ')}")
     $?.success?
   end
 
