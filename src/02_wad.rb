@@ -57,11 +57,19 @@ class Wad
   end
 
   def s3_bucket_name
-    ENV['S3_BUCKET_NAME']
+    if ENV['S3_BUCKET_NAME']
+      ENV['S3_BUCKET_NAME']
+    else
+      abort "Must provide S3_BUCKET_NAME="
+    end
   end
 
   def s3_credentials
-    ENV['S3_CREDENTIALS'].split(':')
+    if ENV['S3_CREDENTIALS']
+      ENV['S3_CREDENTIALS'].split(':')
+    else
+      abort "Must provide S3_CREDENTIALS="
+    end
   end
 
   def s3_access_key_id
