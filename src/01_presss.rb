@@ -48,6 +48,18 @@ class Presss
       end
     end
 
+    def bucket_in_hostname?
+      config[:bucket_in_hostname]
+    end
+
+    def url_prefix
+      if bucket_in_hostname?
+        "https://#{bucket_name}.#{domain}"
+      else
+        "https://#{domain}/#{bucket_name}"
+      end
+    end
+
     # Returns the absolute path based on the key for the object.
     def absolute_path(path)
       path.start_with?('/') ? path : '/' + path
@@ -73,10 +85,11 @@ class Presss
     end
 
     def signed_url(verb, expires, headers, path)
-      path = canonicalized_resource(path)
-      signature = [ verb.to_s.upcase, nil, nil, expires, [ headers, path ].flatten.compact ].flatten.join("\n")
-      signed = authorization.sign(signature)
-      "https://#{domain}#{path}?Signature=#{signed}&Expires=#{expires}&AWSAccessKeyId=#{authorization.access_key_id}"
+      path           = absolute_path(path)
+      canonical_path = canonicalized_resource(path)
+      signature      = [ verb.to_s.upcase, nil, nil, expires, [ headers, canonical_path ].flatten.compact ].flatten.join("\n")
+      signed         = authorization.sign(signature)
+      "#{url_prefix}#{path}?Signature=#{signed}&Expires=#{expires}&AWSAccessKeyId=#{authorization.access_key_id}"
     end
 
     def download(path, destination)

@@ -88,7 +88,8 @@ class Wad
     Presss.config = {
       :bucket_name => s3_bucket_name,
       :access_key_id => s3_access_key_id,
-      :secret_access_key => s3_secret_access_key
+      :secret_access_key => s3_secret_access_key,
+      :bucket_in_hostname => (ENV['WAD_BUCKET_IN_HOSTNAME'] == 'true')
     }
   end
 
