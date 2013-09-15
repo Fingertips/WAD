@@ -59,8 +59,6 @@ class Wad
   def s3_bucket_name
     if bucket = ENV['WAD_S3_BUCKET_NAME'] || ENV['S3_BUCKET_NAME']
       bucket
-    else
-      abort "Must provide WAD_S3_BUCKET_NAME="
     end
   end
 
@@ -114,14 +112,14 @@ class Wad
 
   def zip
     log "Creating artifact with tar (#{File.basename(bzip_filename)})"
-    system("cd #{project_root} && tar -cjf #{bzip_filename} #{cache_path.join(' ')}")
+    system("cd #{project_root} && tar -cPjf #{bzip_filename} #{cache_path.join(' ')}")
     $?.success?
   end
 
 
   def unzip
     log "Unpacking artifact with tar (#{File.basename(bzip_filename)})"
-    system("cd #{project_root} && tar -xjf #{bzip_filename}")
+    system("cd #{project_root} && tar -xPjf #{bzip_filename}")
     $?.success?
   end
 
