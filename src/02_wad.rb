@@ -67,17 +67,15 @@ class Wad
   def s3_credentials
     if creds = ENV['WAD_S3_CREDENTIALS'] || ENV['S3_CREDENTIALS']
       creds.split(':')
-    else
-      abort "Must provide WAD_S3_CREDENTIALS="
     end
   end
 
   def s3_access_key_id
-    s3_credentials[0]
+    s3_credentials && s3_credentials[0]
   end
 
   def s3_secret_access_key
-    s3_credentials[1]
+    s3_credentials && s3_credentials[1]
   end
 
   def s3_path
@@ -152,7 +150,10 @@ class Wad
   end
 
   def setup
-    if get
+    if !s3_credentials || !s3_bucket_name
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      install
+    elsif get
       install
     elsif install
       put
