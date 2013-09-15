@@ -57,18 +57,18 @@ class Wad
   end
 
   def s3_bucket_name
-    if ENV['S3_BUCKET_NAME']
-      ENV['S3_BUCKET_NAME']
+    if bucket = ENV['WAD_S3_BUCKET_NAME'] || ENV['S3_BUCKET_NAME']
+      bucket
     else
-      abort "Must provide S3_BUCKET_NAME="
+      abort "Must provide WAD_S3_BUCKET_NAME="
     end
   end
 
   def s3_credentials
-    if ENV['S3_CREDENTIALS']
-      ENV['S3_CREDENTIALS'].split(':')
+    if creds = ENV['WAD_S3_CREDENTIALS'] || ENV['S3_CREDENTIALS']
+      creds.split(':')
     else
-      abort "Must provide S3_CREDENTIALS="
+      abort "Must provide WAD_S3_CREDENTIALS="
     end
   end
 
@@ -89,6 +89,7 @@ class Wad
       :bucket_name => s3_bucket_name,
       :access_key_id => s3_access_key_id,
       :secret_access_key => s3_secret_access_key,
+      :region => ENV['WAD_AWS_REGION'],
       :bucket_in_hostname => (ENV['WAD_BUCKET_IN_HOSTNAME'] == 'true')
     }
   end
