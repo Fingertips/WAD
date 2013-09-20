@@ -89,13 +89,13 @@ class Presss
       canonical_path = canonicalized_resource(path)
       signature      = [ verb.to_s.upcase, nil, nil, expires, [ headers, canonical_path ].flatten.compact ].flatten.join("\n")
       signed         = authorization.sign(signature)
-      "#{url_prefix}#{path}?Signature=#{signed}&Expires=#{expires}&AWSAccessKeyId=#{authorization.access_key_id}"
+      "#{url_prefix}#{path}?Signature=#{CGI.escape(signed)}&Expires=#{expires}&AWSAccessKeyId=#{CGI.escape(authorization.access_key_id)}"
     end
 
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, nil, path)
       Presss.log "signed_url=#{url}"
-      system 'curl', '-f', '-o', destination, url
+      system 'curl', '-f', '-S', '-o', destination, url
       $?.success?
     end
 
@@ -105,7 +105,7 @@ class Presss
       header = 'x-amz-storage-class:REDUCED_REDUNDANCY'
       url = signed_url(:put, Time.now.to_i + 600, header, path)
       Presss.log "signed_url=#{url}"
-      system 'curl', '-f', '-H', header, '-T', file, url
+      system 'curl', '-f', '-S', '-H', header, '-T', file, url
       $?.success?
     end
   end
