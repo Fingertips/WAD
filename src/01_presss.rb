@@ -24,26 +24,6 @@ class Presss
   end
 
   class HTTP
-    class RequestError < StandardError; end
-
-    class Response
-      attr_accessor :status_code, :headers, :body
-
-      def initialize(status_code, headers, body=nil)
-        @status_code, @headers, @body = status_code.to_i, headers, body
-      end
-
-      # Returns _true_ when the status code is in the 2XX range. Returns false otherwise.
-      def success?
-        status_code >= 200 && status_code < 300
-      end
-    end
-
-    class << self
-      attr_accessor :port
-    end
-    self.port = 443
-
     attr_accessor :config
 
     def initialize(config)
@@ -68,9 +48,16 @@ class Presss
       end
     end
 
-    # Returns the AWS hostname based on the configured bucket name.
-    def host
-      bucket_name + '.' + domain
+    def bucket_in_hostname?
+      config[:bucket_in_hostname]
+    end
+
+    def url_prefix
+      if bucket_in_hostname?
+        "https://#{bucket_name}.#{domain}"
+      else
+        "https://#{domain}/#{bucket_name}"
+      end
     end
 
     # Returns the absolute path based on the key for the object.
@@ -80,11 +67,11 @@ class Presss
 
     # Returns the canonicalized resource used in the authorization
     # signature for an absolute path to an object.
-    def canonicalized_resource(absolute_path)
+    def canonicalized_resource(path)
       if bucket_name.nil?
         raise ArgumentError, "Please configure a bucket_name: Presss.config = { bucket_name: 'my-bucket-name }"
       else
-        '/' + bucket_name + absolute_path
+        '/' + bucket_name + absolute_path(path)
       end
     end
 
@@ -97,79 +84,29 @@ class Presss
       )
     end
 
-    # Returns the request headers for a date, message and content-type.
-    def headers(date, message, content_type=nil)
-      headers = {
-        'Authorization' => authorization.header(message),
-        'Date' => date,
-        'User-Agent' => 'Press/0.9'
-      }
-      headers['Content-Type'] = content_type if content_type
-      headers
+    def signed_url(verb, expires, headers, path)
+      path           = absolute_path(path)
+      canonical_path = canonicalized_resource(path)
+      signature      = [ verb.to_s.upcase, nil, nil, expires, [ headers, canonical_path ].flatten.compact ].flatten.join("\n")
+      signed         = authorization.sign(signature)
+      "#{url_prefix}#{path}?Signature=#{CGI.escape(signed)}&Expires=#{expires}&AWSAccessKeyId=#{CGI.escape(authorization.access_key_id)}"
     end
 
-    # Returns a Net::HTTP instance with the correct SSL configuration for a
-    # request.
-    def http
-      @http ||= begin
-        http = Net::HTTP.new(host, self.class.port)
-        http.use_ssl = true
-        http.ca_file = 'tmp/cacert.pem'
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-        http
-      end
-    end
-
-    # Joins a number of parameters for a valid request message used to compute
-    # the request signature.
-    def join(verb, body, content_type, date, headers, absolute_path)
-      [
-        verb.to_s.upcase,
-        nil,
-        content_type,
-        date,
-        # TODO: aws-x headers?
-        canonicalized_resource(absolute_path)
-      ].join("\n")
-    end
-
-    # Get an object with a key.
-    def get(path)
-      path = absolute_path(path)
-      date = Time.now.rfc2822
-      message = join('GET', nil, nil, date, nil, path)
-      request = Net::HTTP::Get.new(path, headers(date, message))
-      begin
-        response = http.start { |http| http.request(request) }
-        Presss::HTTP::Response.new(
-          response.code,
-          response.instance_variable_get('@header'),
-          response.body
-        )
-      rescue EOFError => error
-        raise Presss::HTTP::RequestError, error.message
-      end
+    def download(path, destination)
+      url = signed_url(:get, Time.now.to_i + 600, nil, path)
+      Presss.log "signed_url=#{url}"
+      system 'curl', '--tcp-nodelay', '-f', '-S', '-o', destination, url
+      $?.success?
     end
 
     # Puts an object with a key using a file or string. Optionally pass in
     # the content-type if you want to set a specific one.
-    def put(path, file, content_type=nil)
-      path = absolute_path(path)
-      body = file.respond_to?(:read) ? file.read : file.to_s
-      date = Time.now.rfc2822
-      message = join('PUT', body, content_type, date, nil, path)
-      request = Net::HTTP::Put.new(path, headers(date, message, content_type))
-      request.body = body
-      begin
-        response = http.start { |http| http.request(request) }
-        Presss::HTTP::Response.new(
-          response.code,
-          response.instance_variable_get('@header'),
-          response.body
-        )
-      rescue EOFError => error
-        raise Presss::HTTP::RequestError, error.message
-      end
+    def put(path, file)
+      header = 'x-amz-storage-class:REDUCED_REDUNDANCY'
+      url = signed_url(:put, Time.now.to_i + 600, header, path)
+      Presss.log "signed_url=#{url}"
+      system 'curl', '--tcp-nodelay', '-f', '-S', '-H', header, '-T', file, url
+      $?.success?
     end
   end
 
@@ -180,13 +117,13 @@ class Presss
   self.config = {}
 
   # Get a object with a certain key.
-  def self.get(path)
+  def self.download(path, destination)
+    t0 = Time.now
     request = Presss::HTTP.new(config)
     log("Trying to GET #{path}")
-    response = request.get(path)
-    if response.success?
-      log("Got response: #{response.status_code}")
-      response.body
+    if request.download(path, destination)
+      puts("[wad] Downloaded in #{(Time.now - t0).to_i} seconds")
+      true
     else
       nil
     end
@@ -194,13 +131,10 @@ class Presss
 
   # Puts an object with a key using a file or string. Optionally pass in
   # the content-type if you want to set a specific one.
-  def self.put(path, file, content_type='application/x-download')
+  def self.put(path, filename, content_type='application/x-download')
     request = Presss::HTTP.new(config)
     log("Trying to PUT #{path}")
-    response = request.put(path, file, content_type)
-    log("Got response: #{response.status_code}")
-    log(response.body) unless response.success?
-    response.success?
+    request.put(path, filename)
   end
 
   # Logs to the configured logger if a logger was configured.

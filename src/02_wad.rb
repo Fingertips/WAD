@@ -1,8 +1,42 @@
 # Utility class to push and fetch Bundler directories to speed up
 # test runs on Travis-CI
 class Wad
+  class Key
+    def default_environment_variables
+      []
+    end
+
+    def default_files
+      [ "#{ENV['BUNDLE_GEMFILE']}.lock" ]
+    end
+
+    def environment_variables
+      if ENV['WAD_ENVIRONMENT_VARIABLES']
+        ENV['WAD_ENVIRONMENT_VARIABLES'].split(',')
+      else
+        default_environment_variables
+      end
+    end
+
+    def files
+      ENV['WAD_FILES'] ? ENV['WAD_FILES'].split(',') : default_files
+    end
+
+    def environment_variable_contents
+      environment_variables.map { |v| ENV[v] }
+    end
+
+    def file_contents
+      files.map { |f| File.read(f) rescue nil }
+    end
+
+    def contents
+      segments = [ RUBY_VERSION, RUBY_PLATFORM ] + environment_variable_contents + file_contents
+      Digest::SHA1.hexdigest(segments.join("\n"))
+    end
+  end
+
   def initialize
-    write_cacert
     s3_configure
   end
 
@@ -10,79 +44,62 @@ class Wad
     Dir.pwd
   end
 
-  def cacert_filename
-    File.join(project_root, 'tmp/cacert.pem')
-  end
-
-  def write_cacert
-    FileUtils.mkdir_p(File.dirname(cacert_filename))
-    File.open(cacert_filename, 'wb') do |file|
-      file.write(DATA.read)
-    end
-  end
-
-  def gemfile_lock
-    File.join(project_root, 'Gemfile.lock')
-  end
-
-  def bundle_name_parts
-    [
-      File.read(gemfile_lock),
-      RUBY_VERSION,
-      RUBY_PLATFORM
-    ]
-  end
-
-  def bundle_name
-    Digest::MD5.hexdigest(bundle_name_parts.join)
+  def artifact_name
+    @artifact_name ||= Key.new.contents
   end
 
   def bzip_filename
-    File.join(project_root, "tmp/#{bundle_name}.tar.bz2")
+    File.join(project_root, "tmp/#{artifact_name}.tar.bz2")
   end
 
-  def bundler_path
-    '.bundle'
+  def cache_path
+    ENV['WAD_CACHE_PATH'] ? ENV['WAD_CACHE_PATH'].split(",") : [ '.bundle' ]
   end
 
   def s3_bucket_name
-    ENV['S3_BUCKET_NAME']
+    if bucket = ENV['WAD_S3_BUCKET_NAME'] || ENV['S3_BUCKET_NAME']
+      bucket
+    end
   end
 
   def s3_credentials
-    ENV['S3_CREDENTIALS'].split(':')
+    if creds = ENV['WAD_S3_CREDENTIALS'] || ENV['S3_CREDENTIALS']
+      creds.split(':')
+    end
+  end
+
+  def valid_config?
+    s3_credentials || s3_bucket_name
   end
 
   def s3_access_key_id
-    s3_credentials[0]
+    s3_credentials && s3_credentials[0]
   end
 
   def s3_secret_access_key
-    s3_credentials[1]
+    s3_credentials && s3_credentials[1]
   end
 
   def s3_path
-    "#{bundle_name}.tar.bz2"
+    "#{artifact_name}.tar.bz2"
   end
 
   def s3_configure
     Presss.config = {
       :bucket_name => s3_bucket_name,
       :access_key_id => s3_access_key_id,
-      :secret_access_key => s3_secret_access_key
+      :secret_access_key => s3_secret_access_key,
+      :region => ENV['WAD_AWS_REGION'],
+      :bucket_in_hostname => (ENV['WAD_BUCKET_IN_HOSTNAME'] == 'true')
     }
-  end
-
-  def s3_region
-    'eu-west-1'
   end
 
   def s3_write
     log "Trying to write Wad to S3"
-    if Presss.put(s3_path, open(bzip_filename))
+    if Presss.put(s3_path, bzip_filename)
       log "Wrote Wad to S3"
     else
-      log "Failed to write to S3, debug with `wad -h'"
+      log "Failed to write to S3, debug with `wad -v'"
     end
   end
 
@@ -94,61 +111,95 @@ class Wad
 
     log "Trying to fetch Wad from S3"
     FileUtils.mkdir_p(File.dirname(bzip_filename))
-    if bzip = Presss.get(s3_path)
-      File.open(bzip_filename, 'wb') do |file|
-        file.write(bzip)
-      end
-      true
-    else
-      false
-    end
+    Presss.download(s3_path, bzip_filename)
   end
 
-  def zip
-    log "Creating Wad with tar (#{bzip_filename})"
-    system("cd #{project_root} && tar -cjf #{bzip_filename} #{bundler_path}")
+  def zip(paths)
+    if paths.empty?
+      log "No directories specified for upload"
+      return
+    end
+
+    log "Creating artifact with tar (#{File.basename(bzip_filename)}) with #{paths.join(', ')}"
+    system("cd #{project_root} && tar -cPjf #{bzip_filename} #{paths.join(' ')}")
+    $?.success?
   end
 
 
   def unzip
-    log "Unpacking Wad with tar (#{bzip_filename})"
-    system("cd #{project_root} && tar -xjf #{bzip_filename}")
+    log "Unpacking artifact with tar (#{File.basename(bzip_filename)})"
+    system("cd #{project_root} && tar -xPjf #{bzip_filename}")
+    $?.success?
   end
 
-  def put
-    zip
+  def put(paths)
+    paths = paths.select { |f| File.exists?(f) }
+    zip(paths)
     s3_write
   end
 
   def get
     if s3_read
       unzip
-      true
-    else
-      false
     end
   end
 
-  def install_bundle
-    log "Installing bundle"
-    system("bundle install --path .bundle --without='development production'")
+  def default_command
+    bundle_without = ENV['WAD_BUNDLE_WITHOUT'] || "development production"
+    "bundle install --path .bundle --without='#{bundle_without}'"
+  end
+
+  def install
+    log "Installing..."
+    command = ENV['WAD_INSTALL_COMMAND'] || default_command
+    puts command
+    system(command)
+    $?.success?
   end
 
   def setup
-    if get
-      install_bundle
-    elsif install_bundle
-      put
+    if !s3_credentials || !s3_bucket_name
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      install
+    elsif get
+      install
+    elsif install
+      put(cache_path)
     else
-      raise "Failed properly fetch or install bundle. Please review the logs."
+      abort "Failed properly fetch or install. Please review the logs."
     end
+  end
+
+  def download
+    if !valid_config?
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      return
+    end
+
+    get
+  end
+
+  def upload(*directories)
+    if !valid_config?
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      return
+    end
+
+    if File.exists?(bzip_filename)
+      log "Archive already downloaded. Not uploading."
+      return
+    end
+
+    directories = directories.flatten.compact
+
+    if directories.empty?
+      directories = cache_path
+    end
+
+    put(directories)
   end
 
   def log(message)
     puts "[wad] #{message}"
-  end
-
-  def self.setup
-    new.setup
   end
 end
