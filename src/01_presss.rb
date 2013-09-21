@@ -95,7 +95,7 @@ class Presss
     def download(path, destination)
       url = signed_url(:get, Time.now.to_i + 600, nil, path)
       Presss.log "signed_url=#{url}"
-      system 'curl', '-f', '-S', '-o', destination, url
+      system 'curl', '--tcp-nodelay', '-f', '-S', '-o', destination, url
       $?.success?
     end
 
@@ -105,7 +105,7 @@ class Presss
       header = 'x-amz-storage-class:REDUCED_REDUNDANCY'
       url = signed_url(:put, Time.now.to_i + 600, header, path)
       Presss.log "signed_url=#{url}"
-      system 'curl', '-f', '-S', '-H', header, '-T', file, url
+      system 'curl', '--tcp-nodelay', '-f', '-S', '-H', header, '-T', file, url
       $?.success?
     end
   end

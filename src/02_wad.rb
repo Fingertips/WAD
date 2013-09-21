@@ -68,6 +68,10 @@ class Wad
     end
   end
 
+  def valid_config?
+    s3_credentials || s3_bucket_name
+  end
+
   def s3_access_key_id
     s3_credentials && s3_credentials[0]
   end
@@ -110,9 +114,14 @@ class Wad
     Presss.download(s3_path, bzip_filename)
   end
 
-  def zip
-    log "Creating artifact with tar (#{File.basename(bzip_filename)})"
-    system("cd #{project_root} && tar -cPjf #{bzip_filename} #{cache_path.join(' ')}")
+  def zip(paths)
+    if paths.empty?
+      log "No directories specified for upload"
+      return
+    end
+
+    log "Creating artifact with tar (#{File.basename(bzip_filename)}) with #{paths.join(', ')}"
+    system("cd #{project_root} && tar -cPjf #{bzip_filename} #{paths.join(' ')}")
     $?.success?
   end
 
@@ -123,8 +132,9 @@ class Wad
     $?.success?
   end
 
-  def put
-    zip
+  def put(paths)
+    paths = paths.select { |f| File.exists?(f) }
+    zip(paths)
     s3_write
   end
 
@@ -154,10 +164,39 @@ class Wad
     elsif get
       install
     elsif install
-      put
+      put(cache_path)
     else
       abort "Failed properly fetch or install. Please review the logs."
     end
+  end
+
+  def download
+    if !valid_config?
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      return
+    end
+
+    get
+  end
+
+  def upload(*directories)
+    if !valid_config?
+      log "No S3 credentials defined. Set WAD_S3_CREDENTIALS= and WAD_S3_BUCKET_NAME= for caching."
+      return
+    end
+
+    if File.exists?(bzip_filename)
+      log "Archive already downloaded. Not uploading."
+      return
+    end
+
+    directories = directories.flatten.compact
+
+    if directories.empty?
+      directories = cache_path
+    end
+
+    put(directories)
   end
 
   def log(message)
