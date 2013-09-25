@@ -129,15 +129,17 @@ class Wad
     end
   end
 
-  def install_bundle
+  def install_bundle(opts = {})
     log "Installing bundle"
-    system("bundle install --path .bundle --without='development production'")
+    cmd = "bundle install --path .bundle --without='development production'"
+    cmd = "travis_retry #{cmd}" if opts.fetch(:retry, true)
+    system(cmd)
   end
 
   def setup
     if get
-      install_bundle
-    elsif install_bundle
+      install_bundle(:retry => false)
+    elsif install_bundle(:retry => true)
       put
     else
       raise "Failed properly fetch or install bundle. Please review the logs."

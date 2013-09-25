@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 28-08-2013 at 16:50
+# Generated on: 25-09-2013 at 11:05
 
 require 'time'
 require 'net/http'
@@ -354,15 +354,17 @@ class Wad
     end
   end
 
-  def install_bundle
+  def install_bundle(opts = {})
     log "Installing bundle"
-    system("bundle install --path .bundle --without='development production' --deployment")
+    cmd = "bundle install --path .bundle --without='development production'"
+    cmd = "travis_retry #{cmd}" if opts.fetch(:retry, true)
+    system(cmd)
   end
 
   def setup
     if get
-      install_bundle
-    elsif install_bundle
+      install_bundle(:retry => false)
+    elsif install_bundle(:retry => true)
       put
     else
       raise "Failed properly fetch or install bundle. Please review the logs."
