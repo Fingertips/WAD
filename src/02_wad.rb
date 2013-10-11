@@ -1,6 +1,10 @@
 # Utility class to push and fetch Bundler directories to speed up
 # test runs on Travis-CI
 class Wad
+  if RUBY_VERSION < '1.9.0'
+    RUBY_ENGINE = 'ruby'
+  end
+
   def initialize
     write_cacert
     s3_configure
