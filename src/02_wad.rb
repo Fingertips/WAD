@@ -83,7 +83,7 @@ class Wad
     if Presss.put(s3_path, open(bzip_filename))
       log "Wrote Wad to S3"
     else
-      log "Failed to write to S3, debug with `wad -h'"
+      log "Failed to write to S3, debug with `wad -v'"
     end
   end
 
