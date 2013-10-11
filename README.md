@@ -75,6 +75,12 @@ If you're already using other encrypted variables you can add another `secure` k
 
 WAD doesn't automatically create a bucket for you. Please create one with the AWS console or the S3 tool of your choice.
 
+### Retries
+
+In some cases you can get network errors on Travis. Currently WAD does not retry bundle uploads or downloads. You can use the `travis_retry` tool if you run into this often:
+
+    install: travis_retry bin/wad
+
 ### Cleaning up
 
 Note that WAD **doesn't clean up** old bundles for you. If you change Gemfile.lock a lot and the bucket becomes very large, you probably want to clean out old bundles once in a while.
