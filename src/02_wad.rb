@@ -29,7 +29,8 @@ class Wad
     [
       File.read(gemfile_lock),
       RUBY_VERSION,
-      RUBY_PLATFORM
+      RUBY_PLATFORM,
+      RUBY_ENGINE
     ]
   end
 
