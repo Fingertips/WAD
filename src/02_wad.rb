@@ -66,16 +66,17 @@ class Wad
     "#{bundle_name}.tar.bz2"
   end
 
+  def s3_region
+    'eu-west-1'
+  end
+
   def s3_configure
     Presss.config = {
+      :region => s3_region,
       :bucket_name => s3_bucket_name,
       :access_key_id => s3_access_key_id,
       :secret_access_key => s3_secret_access_key
     }
-  end
-
-  def s3_region
-    'eu-west-1'
   end
 
   def s3_write
