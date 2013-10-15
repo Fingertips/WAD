@@ -83,13 +83,27 @@ class Wad
     }
   end
 
-  def s3_write
-    log "Trying to write Wad to S3"
+  def s3_write_streaming
     if Presss.put(s3_path, open(bzip_filename))
       log "Wrote Wad to S3"
     else
       log "Failed to write to S3, debug with `wad -v'"
     end
+  end
+
+  def s3_write_non_streaming
+    if Presss.put(s3_path, File.read(bzip_filename))
+      log "Wrote Wad to S3"
+    else
+      log "Failed to write to S3, debug with `wad -v'"
+    end
+  end
+
+  def s3_write
+    log "Trying to write Wad to S3"
+    s3_write_streaming
+  rescue Errno::EPIPE
+    s3_write_non_streaming
   end
 
   def s3_read
