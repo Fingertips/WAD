@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 15-10-2013 at 18:05
+# Generated on: 15-10-2013 at 19:24
 
 require 'time'
 require 'net/http'
@@ -326,7 +326,7 @@ class Wad
   end
 
   def s3_region
-    'eu-west-1'
+    ENV['S3_REGON'] || 'eu-west-1'
   end
 
   def s3_configure
@@ -356,8 +356,8 @@ class Wad
 
   def s3_write
     log "Trying to write Wad to S3"
-  #   s3_write_streaming
-  # rescue Errno::EPIPE
+    s3_write_streaming
+  rescue Errno::EPIPE
     s3_write_non_streaming
   end
 
