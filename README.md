@@ -49,7 +49,7 @@ The region and bucket name are relatively easy:
         - S3_REGION=eu-west-1
         - S3_BUCKET_NAME=unique-wad-bucket-name
 
-You don't have to configure the region if you're using `us-east-1`, the default.
+You don't have to configure the region if you're using `eu-west-1`, the default.
 
 The hard part is configuring the credentials, because they need to be signed. First concatenate your key and secret separated by a semicolon, like so:
 
@@ -84,7 +84,6 @@ In some cases you can get network errors on Travis. Currently WAD does not retry
 ### Cleaning up
 
 Note that WAD **doesn't clean up** old bundles for you. If you change Gemfile.lock a lot and the bucket becomes very large, you probably want to clean out old bundles once in a while.
-
 
 ### Example
 
