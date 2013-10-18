@@ -1,5 +1,7 @@
 # WAD
 
+[!] NOTE: Travis-CI has launched Bundler caching: http://about.travis-ci.org/docs/user/caching/
+
 WAD is a little script that replaces the usual `bundle install` on Travis-CI. It installs the bundle and uploads it to Amazon S3 to speed up consecutive runs.
 
 ## Using WAD
