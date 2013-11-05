@@ -71,7 +71,7 @@ class Wad
   end
 
   def s3_region
-    ENV['S3_REGON'] || 'eu-west-1'
+    ENV['S3_REGION'] || 'eu-west-1'
   end
 
   def s3_configure
