@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated on: 15-10-2013 at 19:24
+# Generated on: 05-11-2013 at 12:12
 
 require 'time'
 require 'net/http'
@@ -326,7 +326,7 @@ class Wad
   end
 
   def s3_region
-    ENV['S3_REGON'] || 'eu-west-1'
+    ENV['S3_REGION'] || 'eu-west-1'
   end
 
   def s3_configure
