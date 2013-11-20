@@ -127,14 +127,14 @@ class Wad
   def zip
     log "Creating Wad with tar (#{bzip_filename})"
     system("cd #{project_root} && tar -cjf #{bzip_filename} #{bundler_path}")
-    raise "Failed to create Wad" if not $?.success
+    raise "Failed to create Wad" if not $?.success?
   end
 
 
   def unzip
     log "Unpacking Wad with tar (#{bzip_filename})"
     system("cd #{project_root} && tar -xjf #{bzip_filename}")
-    raise "Failed to unpack Wad" if not $?.success
+    raise "Failed to unpack Wad" if not $?.success?
   end
 
   def put
