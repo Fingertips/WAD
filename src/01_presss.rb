@@ -99,7 +99,7 @@ class Presss
       headers = {
         'Authorization' => authorization.header(message),
         'Date' => date,
-        'User-Agent' => 'Press/0.9'
+        'User-Agent' => "Press/#{VERSION}"
       }
       headers['Content-Type'] = content_type if content_type
       headers
