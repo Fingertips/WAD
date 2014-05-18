@@ -61,13 +61,18 @@ class Presss
       config[:region] || 'us-east-1'
     end
 
-    def host
+    def domain
       case region
       when 'us-east-1'
         's3.amazonaws.com'
       else
         's3-%s.amazonaws.com' % region
       end
+    end
+
+    # Returns the AWS hostname based on the configured bucket name.
+    def host
+      bucket_name + '.' + domain
     end
 
     # Returns the absolute path based on the key for the object.
@@ -77,11 +82,11 @@ class Presss
 
     # Returns the canonicalized resource used in the authorization
     # signature for an absolute path to an object.
-    def canonicalized_resource(path)
+    def canonicalized_resource(absolute_path)
       if bucket_name.nil?
         raise ArgumentError, "Please configure a bucket_name: Presss.config = { bucket_name: 'my-bucket-name }"
       else
-        '/' + bucket_name + absolute_path(path)
+        '/' + bucket_name + absolute_path
       end
     end
 
@@ -119,20 +124,20 @@ class Presss
 
     # Joins a number of parameters for a valid request message used to compute
     # the request signature.
-    def join(verb, body, content_type, date, headers, canonizalized_resource_path)
+    def join(verb, body, content_type, date, headers, absolute_path)
       [
         verb.to_s.upcase,
         nil,
         content_type,
         date,
         # TODO: aws-x headers?
-        canonizalized_resource_path
+        canonicalized_resource(absolute_path)
       ].join("\n")
     end
 
     # Get an object with a key.
     def get(path, &block)
-      path = canonicalized_resource(path)
+      path = absolute_path(path)
       date = Time.now.rfc2822
       message = join('GET', nil, nil, date, nil, path)
       request = Net::HTTP::Get.new(path, headers(date, message))
@@ -156,25 +161,17 @@ class Presss
       end
     end
 
-    def content_length(file)
-      if file.respond_to?(:size)
-        file.size.to_s
-      elsif file.respond_to?(:path)
-        File.size(file.path).to_s
-      end
-    end
-
     # Puts an object with a key using a file or string. Optionally pass in
     # the content-type if you want to set a specific one.
     def put(path, file, content_type=nil)
-      path = canonicalized_resource(path)
-      body = file.respond_to?(:read) ? file : file.to_s 
+      path = absolute_path(path)
+      body = file.to_s unless file.respond_to?(:read)
       date = Time.now.rfc2822
       message = join('PUT', body, content_type, date, nil, path)
       headers = headers(date, message, content_type)
 
-      if content_length = content_length(file)
-        headers.merge!({'Content-Length' => content_length})
+      if file.respond_to?(:read)
+        headers.merge!({'Content-Length' => file.size.to_s})
       end
 
       request = Net::HTTP::Put.new(path, headers)
