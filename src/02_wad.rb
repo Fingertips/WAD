@@ -153,7 +153,7 @@ class Wad
 
   def install_bundle
     log "Installing bundle"
-    system("bundle install --path .bundle --without='development production'")
+    system("bundle install --path #{bundler_path} --without='development production'")
   end
 
   def setup
