@@ -3,4 +3,8 @@ if ARGV.index('-v')
   Presss.logger = Logger.new($stdout)
 end
 
-Wad.setup
+if ARGV.index('-t')
+  Wad.test
+else
+  Wad.setup
+end

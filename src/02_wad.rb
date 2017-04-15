@@ -156,6 +156,21 @@ class Wad
     system("bundle install --path #{bundler_path} --without='development production'")
   end
 
+  # Test the S3 connection. Expects ENV to hold S3_CREDENTIALS, S3_BUCKET_NAME, and S3_REGION
+  # recommend running with -v
+  def test
+    if Presss.put('wad_test_upload_streaming', open(__FILE__))
+      log "Streaming test succeeded."
+    else
+      log "Streaming test failed."
+    end
+    if Presss.put('wad_test_upload_non-streaming', File.read(__FILE__))
+      log "Non-Streaming test succeeded."
+    else
+      log "Non-Streaming test failed."
+    end
+  end
+
   def setup
     if get
       install_bundle
@@ -172,5 +187,9 @@ class Wad
 
   def self.setup
     new.setup
+  end
+
+  def self.test
+    new.test
   end
 end
