@@ -26,7 +26,7 @@ Travis-CI offers a number of configuration options for stuff that can ran around
  
 Before this happens we need to keep Travis-CI from installing the bundle and do it ourselves.
  
-    install: "bin/wad"
+    install: "travis_retry bin/wad"
     script: "bundle exec rake test:all"
 
 Please refer to the Travis documentation if you need to do something more elaborate.
@@ -63,7 +63,7 @@ Then you use the Travis-CI command line utility to sign it. Replace `account/rep
 
 When all of that is done, you should end up with something like this:
 
-    install: "bin/wad"
+    install: "travis_retry bin/wad"
     script: "bundle exec rake test:all"
     env:
       global:
